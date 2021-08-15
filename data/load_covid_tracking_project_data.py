@@ -12,14 +12,42 @@ def covid_tracking_date_to_date(d):
     out = sc.readdate(str(d)) # Should be a supported format
     return out
 
-class CovidTrackingProjectScraper(Scraper):
+
+class InterfaceCovidTrackingProjectScraper():
+    "An interface for CovidTrackingProjectScraper"
+    @staticmethod
+    @abstractmethod
+    def create_date():
+        "An abstract method create_date"
+
+
+class InterfaceCovidUSTrackingProjectScraper():
+    "An interface for CovidTrackingProjectScraper"
+    @staticmethod
+    @abstractmethod
+    def create_key():
+        "An abstract method create_key"
+
+
+class CovidTrackingProjectScraper(InterfaceCovidTrackingProjectScraper, Scraper):
     def create_date(self):
         self.df['date'] = self.df.date.apply(covid_tracking_date_to_date)
 
 
-class CovidUSTrackingProjectScraper(CovidTrackingProjectScraper):
+class CovidUSTrackingProjectScraper(InterfaceCovidUSTrackingProjectScraper, CovidTrackingProjectScraper):
     def create_key(self):
         self.df['key'] = 'US'
+
+
+class ClassCovidUSTrackingProjectScraperAdapter(InterfaceCovidTrackingProjectScraper):
+    "CovidUSTrackingProjectScraper does not have a create_date, so we can create an adapter"
+
+    def __init__(self):
+        self.covid_us_tracking_project_scraper = CovidUSTrackingProjectScraper()
+
+    def create_date(self):
+        "calls the CovidUSTrackingProjectScraper method create_key instead"
+        self.covid_us_tracking_project_scraper.create_key()
 
 
 ## Set up parameters 
