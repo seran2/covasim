@@ -15,6 +15,77 @@ import sciris as sc
 
 __all__ = ['options']
 
+class IBuilder():
+    "The Builder Interface"
+
+    @staticmethod
+    @abstractmethod
+    def build_reloading_inprogress():
+        "Reloading Covasim so changes take effect"
+
+    @staticmethod
+    @abstractmethod
+    def build_reload_numba():
+        '''
+        Apply changes to Numba functions -- reloading modules is necessary for
+        changes to propagate. Not necessary to call directly if cv.options.set() is used.
+
+        **Example**::
+
+            import covasim as cv
+            cv.options.set(precision=64)
+            sim = cv.Sim()
+            sim.run()
+            assert sim.people.rel_trans.dtype == np.float64
+        '''
+    
+    @staticmethod
+    @abstractmethod
+    def build_reload_complete():
+        "Reload complete"
+    
+
+class Builder(IBuilder):
+    "The Concrete Builder."
+
+    def __init__(self):
+        self.product = Product()
+    
+    def build_reloading_inprogress(self):
+        self.product.parts.append('Reloading Covasim so changes take effect...')
+        return self
+    
+    def build_reload_numba(self):
+        import importlib
+        import covasim as cv
+        importlib.reload(cv.defaults)
+        importlib.reload(cv.utils)
+        importlib.reload(cv)
+        self.product.build_reload_numba()
+        return self
+
+    def build_reload_complete(self):
+        self.product.parts.append('Reload complete. Note: for some options to take effect, you may also need to delete Covasims __pycache__ folder.')
+        return self
+
+class Product():
+    "The Product"
+
+    def __init__(self):
+        self.parts = []
+
+class Director:
+    "The Director, building a complex representation."
+
+    @staticmethod
+    def construct():
+        "Constructs and returns the final product"
+        return Builder()\
+            .build_reloading_inprogress()\
+            .build_reload_numba()\
+            .build_reload_complete()
+
+PRODUCT = Director.construct()
 
 def set_default_options():
     '''
@@ -213,26 +284,7 @@ def handle_show(do_show):
 
 
 def reload_numba():
-    '''
-    Apply changes to Numba functions -- reloading modules is necessary for
-    changes to propagate. Not necessary to call directly if cv.options.set() is used.
-
-    **Example**::
-
-        import covasim as cv
-        cv.options.set(precision=64)
-        sim = cv.Sim()
-        sim.run()
-        assert sim.people.rel_trans.dtype == np.float64
-    '''
-    print('Reloading Covasim so changes take effect...')
-    import importlib
-    import covasim as cv
-    importlib.reload(cv.defaults)
-    importlib.reload(cv.utils)
-    importlib.reload(cv)
-    print("Reload complete. Note: for some options to take effect, you may also need to delete Covasim's __pycache__ folder.")
-    return
+    return PRODUCT.parts
 
 
 # Add these here to be more accessible to the user
