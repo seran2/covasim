@@ -38,12 +38,6 @@ class IBuilder():
             sim.run()
             assert sim.people.rel_trans.dtype == np.float64
         '''
-        import importlib
-        import covasim as cv
-        importlib.reload(cv.defaults)
-        importlib.reload(cv.utils)
-        importlib.reload(cv)
-        return
     
     @staticmethod
     @abstractmethod
@@ -62,6 +56,11 @@ class Builder(IBuilder):
         return self
     
     def build_reload_numba(self):
+        import importlib
+        import covasim as cv
+        importlib.reload(cv.defaults)
+        importlib.reload(cv.utils)
+        importlib.reload(cv)
         self.product.build_reload_numba()
         return self
 
